@@ -21,15 +21,15 @@ export type RegistrationCredentials = z.output<typeof schema>;
 <script setup lang="ts">
 import { REQUEST_FAILURE_TOAST } from "@/shared/toasts";
 import { ValidationError } from "@/shared/types/api/ValidationError";
-import type { AuthFormField } from "@nuxt/ui";
+import { extractFirstErrors } from "@/shared/utils/validation-errors";
 import { FormSubmitEvent } from "@nuxt/ui";
 import { FetchError } from "ofetch";
-import { ref } from "vue";
 import { register } from "../api";
+import { useAuthForm } from "../composables/useAuthForm";
 
 const toast = useToast();
 
-const fields = ref<AuthFormField[]>([
+const { fields, setFieldErrors } = useAuthForm([
   {
     name: "name",
     type: "text",
@@ -67,26 +67,11 @@ const onSubmit = async (event: FormSubmitEvent<RegistrationCredentials>) => {
     if (e instanceof FetchError) {
       if (e.status == 422) {
         const validationError = e.data as ValidationError;
-        const errors: Record<string, string> = {};
-
-        for (const [key, value] of Object.entries(validationError.errors)) {
-          errors[key] = value[0];
-        }
-
+        const errors = extractFirstErrors(validationError.errors);
         setFieldErrors(errors);
       } else {
         toast.add(REQUEST_FAILURE_TOAST);
       }
-    }
-  }
-};
-
-const setFieldErrors = (errors: Record<string, string>) => {
-  for (const field of fields.value) {
-    if (field.name in errors) {
-      field.error = errors[field.name];
-    } else {
-      field.error = undefined;
     }
   }
 };
