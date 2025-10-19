@@ -17,6 +17,9 @@ export default defineConfig({
           neutral: "zinc",
         },
       },
+      components: {
+        dirs: "src/shared/components",
+      },
     }),
   ],
 });
