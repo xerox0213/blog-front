@@ -1,42 +1,29 @@
 <script lang="ts">
 import * as z from "zod";
 
-const schema = z
-  .object({
-    name: z.string("Name is required."),
-    email: z.email("Invalid email."),
-    password: z.string("Password is required."),
-    password_confirmation: z.string("Password confirmation is required."),
-  })
-  .refine(
-    (data) => {
-      return data.password === data.password_confirmation;
-    },
-    { path: ["password"], error: "Passwords do not match" },
-  );
+const schema = z.object({
+  email: z.email("Invalid email"),
+  password: z.string("Password is required"),
+});
 
-export type RegistrationCredentials = z.output<typeof schema>;
+export type LoginCredentials = z.infer<typeof schema>;
 </script>
 
 <script setup lang="ts">
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { REQUEST_FAILURE_TOAST } from "@/shared/toasts";
 import { ValidationError } from "@/shared/types/api/ValidationError";
 import { extractFirstErrors } from "@/shared/utils/validation-errors";
-import { FormSubmitEvent } from "@nuxt/ui";
+import type { FormSubmitEvent } from "@nuxt/ui";
 import { FetchError } from "ofetch";
-import { register } from "../api";
+import { login } from "../api";
 import { useAuthForm } from "../composables/useAuthForm";
 
 const toast = useToast();
 
+const authStore = useAuthStore();
+
 const { fields, setFieldErrors } = useAuthForm([
-  {
-    name: "name",
-    type: "text",
-    label: "Name",
-    placeholder: "Enter your name",
-    required: true,
-  },
   {
     name: "email",
     type: "email",
@@ -51,21 +38,14 @@ const { fields, setFieldErrors } = useAuthForm([
     placeholder: "Enter your password",
     required: true,
   },
-  {
-    name: "password_confirmation",
-    label: "Confirm password",
-    type: "password",
-    placeholder: "Confirm your password",
-    required: true,
-  },
 ]);
 
-const onSubmit = async (event: FormSubmitEvent<RegistrationCredentials>) => {
+const onSubmit = async (event: FormSubmitEvent<LoginCredentials>) => {
   try {
-    await register(event.data);
+    authStore.user = await login(event.data);
   } catch (e) {
     if (e instanceof FetchError) {
-      if (e.status == 422) {
+      if (e.status === 422) {
         const validationError = e.data as ValidationError;
         const errors = extractFirstErrors(validationError.errors);
         setFieldErrors(errors);
@@ -83,14 +63,14 @@ const onSubmit = async (event: FormSubmitEvent<RegistrationCredentials>) => {
       :schema
       :fields
       icon="i-lucide-user"
-      title="Create an account"
-      description="Enter your information below to create your account"
-      :submit="{ label: 'Create an account', variant: 'soft', size: 'lg' }"
+      title="Log in to your account"
+      description="Enter your email and password below to log in"
+      :submit="{ label: 'Log in', variant: 'soft', size: 'lg' }"
       @submit="onSubmit"
     >
       <template #footer>
-        Already have an account ?
-        <ULink :to="{ name: '/login' }">Log in</ULink>
+        Don't have an account ?
+        <ULink :to="{ name: '/register' }">Sign up</ULink>
       </template>
     </UAuthForm>
   </UPageCard>
