@@ -4,6 +4,8 @@ import LoginForm from "@/features/auth/components/LoginForm.vue";
 
 <template>
   <UPageSection>
-    <LoginForm />
+    <UPageCard class="max-w-max mx-auto">
+      <LoginForm />
+    </UPageCard>
   </UPageSection>
 </template>

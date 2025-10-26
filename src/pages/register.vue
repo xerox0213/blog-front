@@ -4,6 +4,8 @@ import RegisterForm from "@/features/auth/components/RegisterForm.vue";
 
 <template>
   <UPageSection>
-    <RegisterForm />
+    <UPageCard class="max-w-max mx-auto">
+      <RegisterForm />
+    </UPageCard>
   </UPageSection>
 </template>

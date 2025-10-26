@@ -19,15 +19,31 @@ export type RegistrationCredentials = z.output<typeof schema>;
 </script>
 
 <script setup lang="ts">
-import { REQUEST_FAILURE_TOAST } from "@/shared/toasts";
-import { ValidationError } from "@/shared/types/api/ValidationError";
+import { ValidationError } from "@/shared/types/api/errors/ValidationError";
 import { extractFirstErrors } from "@/shared/utils/validation-errors";
 import { FormSubmitEvent } from "@nuxt/ui";
-import { FetchError } from "ofetch";
+import { useMutation } from "@tanstack/vue-query";
+import { ref } from "vue";
 import { register } from "../api";
 import { useAuthForm } from "../composables/useAuthForm";
 
-const toast = useToast();
+const registerMutation = useMutation({
+  mutationFn: register,
+  onError: (error) => {
+    if (error.status && error.data) {
+      switch (error.status) {
+        case 422: {
+          const validationError = error.data as ValidationError;
+          const errors = extractFirstErrors(validationError.errors);
+          setFieldErrors(errors);
+          break;
+        }
+      }
+    }
+  },
+});
+
+const errorAlertTitle = ref("");
 
 const { fields, setFieldErrors } = useAuthForm([
   {
@@ -60,38 +76,36 @@ const { fields, setFieldErrors } = useAuthForm([
   },
 ]);
 
-const onSubmit = async (event: FormSubmitEvent<RegistrationCredentials>) => {
-  try {
-    await register(event.data);
-  } catch (e) {
-    if (e instanceof FetchError) {
-      if (e.status == 422) {
-        const validationError = e.data as ValidationError;
-        const errors = extractFirstErrors(validationError.errors);
-        setFieldErrors(errors);
-      } else {
-        toast.add(REQUEST_FAILURE_TOAST);
-      }
-    }
-  }
+const onSubmit = (event: FormSubmitEvent<RegistrationCredentials>) => {
+  errorAlertTitle.value = "";
+  registerMutation.mutate(event.data);
 };
 </script>
 
 <template>
-  <UPageCard class="max-w-max mx-auto">
-    <UAuthForm
-      :schema
-      :fields
-      icon="i-lucide-user"
-      title="Create an account"
-      description="Enter your information below to create your account"
-      :submit="{ label: 'Create an account', variant: 'soft', size: 'lg' }"
-      @submit="onSubmit"
-    >
-      <template #footer>
-        Already have an account ?
-        <ULink :to="{ name: '/login' }">Log in</ULink>
-      </template>
-    </UAuthForm>
-  </UPageCard>
+  <UAuthForm
+    :loading="registerMutation.isPending.value"
+    :schema
+    :fields
+    icon="i-lucide-user"
+    title="Create an account"
+    description="Enter your information below to create your account"
+    :submit="{ label: 'Create an account', variant: 'soft', size: 'lg' }"
+    @submit="onSubmit"
+  >
+    <template #validation>
+      <UAlert
+        v-if="errorAlertTitle"
+        :title="errorAlertTitle"
+        icon="i-lucide-info"
+        variant="soft"
+        color="error"
+      />
+    </template>
+
+    <template #footer>
+      Already have an account ?
+      <ULink :to="{ name: '/login' }">Log in</ULink>
+    </template>
+  </UAuthForm>
 </template>
