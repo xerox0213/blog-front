@@ -4,7 +4,10 @@ import { createPinia } from "pinia";
 import { createApp } from "vue";
 import App from "./App.vue";
 import "./assets/css/main.css";
+import { api } from "./core/api";
 import router from "./core/router";
+import { useAuthStore } from "./shared/stores/useAuthStore";
+import { User } from "./shared/types/models/User";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -17,4 +20,6 @@ app.use(ui);
 
 app.use(pinia);
 
-app.mount("#app");
+api<User>("/api/user")
+  .then((user) => (useAuthStore().user = user))
+  .finally(() => app.mount("#app"));

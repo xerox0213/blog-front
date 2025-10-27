@@ -15,16 +15,17 @@ export const api = ofetch.create({
     const toast = useToast();
     toast.add(REQUEST_FAILURE_TOAST);
   },
-  onResponseError: ({ response }) => {
+  onResponseError: ({ response, request }) => {
     const route = router.currentRoute.value;
 
     if (
+      !request.toString().includes("/api/user") &&
       (response.status === 401 || response.status === 419) &&
       route.name !== "/login" &&
       route.name !== "/register"
     ) {
-      const toast = useToast();
       router.push("/login");
+      const toast = useToast();
       toast.add(UNAUTHENTICATED_TOAST);
     }
   },
