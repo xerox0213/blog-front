@@ -4,12 +4,12 @@ import { RegistrationCredentials } from "./components/RegisterForm.vue";
 import { LoginResponse, RegisterResponse } from "./types";
 
 export const getCsrfCookie = async () => {
-  return api("/sanctum/csrf-cookie");
+  return api("/csrf-cookie");
 };
 
 export const register = async (credentials: RegistrationCredentials) => {
   await getCsrfCookie();
-  return api<RegisterResponse>("/api/register", {
+  return api<RegisterResponse>("/register", {
     method: "POST",
     body: credentials,
   });
@@ -17,7 +17,7 @@ export const register = async (credentials: RegistrationCredentials) => {
 
 export const login = async (credentials: LoginCredentials) => {
   await getCsrfCookie();
-  return api<LoginResponse>("/api/login", {
+  return api<LoginResponse>("/login", {
     method: "POST",
     body: credentials,
   });
